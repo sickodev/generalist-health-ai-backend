@@ -75,7 +75,8 @@ class AuditJobServiceTest {
                 ensembleOrchestrator,
                 llmRouter,
                 reportGenerator,
-                objectMapper
+                objectMapper,
+                Runnable::run
         );
     }
 

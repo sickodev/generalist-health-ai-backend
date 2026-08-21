@@ -1,5 +1,6 @@
 package com.generalisthealthai.rcm.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.generalisthealthai.rcm.domain.enums.AuditType;
 import com.generalisthealthai.rcm.domain.enums.JobStatus;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AuditJobStatusResponseDto {
 
     private UUID jobId;

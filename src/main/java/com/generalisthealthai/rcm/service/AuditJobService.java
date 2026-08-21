@@ -51,6 +51,7 @@ public class AuditJobService {
     private final LlmRouter llmRouter;
     private final AuditReportGenerator reportGenerator;
     private final ObjectMapper objectMapper;
+    private final java.util.concurrent.Executor executor;
 
     public AuditJobService(
             AuditJobRepository jobRepository,
@@ -62,7 +63,8 @@ public class AuditJobService {
             EnsembleOrchestrator ensembleOrchestrator,
             LlmRouter llmRouter,
             AuditReportGenerator reportGenerator,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            @org.springframework.beans.factory.annotation.Qualifier("taskExecutor") java.util.concurrent.Executor executor) {
         this.jobRepository = jobRepository;
         this.reportRepository = reportRepository;
         this.cacheService = cacheService;
@@ -73,6 +75,7 @@ public class AuditJobService {
         this.llmRouter = llmRouter;
         this.reportGenerator = reportGenerator;
         this.objectMapper = objectMapper;
+        this.executor = executor;
     }
 
     /**
@@ -95,8 +98,8 @@ public class AuditJobService {
         cacheService.cacheJobStatus(saved.getId(), JobStatus.PENDING, JOB_STATUS_TTL);
         log.info("Submitted Prior Authorization Verification Job {}", saved.getId());
 
-        // Trigger asynchronous background processing
-        processJobAsync(saved.getId());
+        // Trigger asynchronous background processing on taskExecutor
+        java.util.concurrent.CompletableFuture.runAsync(() -> processJobAsync(saved.getId()), executor);
         return saved;
     }
 
@@ -136,8 +139,8 @@ public class AuditJobService {
         cacheService.cacheJobStatus(saved.getId(), JobStatus.PENDING, JOB_STATUS_TTL);
         log.info("Submitted Claim Denial Audit Job {}", saved.getId());
 
-        // Trigger asynchronous background processing
-        processJobAsync(saved.getId());
+        // Trigger asynchronous background processing on taskExecutor
+        java.util.concurrent.CompletableFuture.runAsync(() -> processJobAsync(saved.getId()), executor);
         return saved;
     }
 
