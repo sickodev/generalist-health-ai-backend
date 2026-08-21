@@ -1,6 +1,86 @@
 spring:
   application:
     name: rcm-service
+  profiles:
+    active: dev
+  threads:
+    virtual:
+      enabled: true
+
+  # Default datasource: H2 in-memory for local dev if Postgres isn't running
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:rcmdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+
+  jpa:
+    database-platform: ${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.H2Dialect}
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 2000ms
 
 server:
-  port: 8080
+  port: ${PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# Medprompt & LLM Configuration
+rcm:
+  medprompt:
+    vector-dimension: 768
+    knn-k: 4
+    ensemble-size: 4
+    ensemble-timeout-ms: 8000
+    temperature: 0.3
+    gemini:
+      api-key: ${GEMINI_API_KEY:demo-key}
+      base-url: https://generativelanguage.googleapis.com/v1beta
+      model: gemini-1.5-pro
+      embedding-model: text-embedding-004
+
+---
+# Docker Profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:postgresql://postgres:5432/rcmdb
+    driver-class-name: org.postgresql.Driver
+    username: rcmuser
+    password: rcmpass
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+  data:
+    redis:
+      host: redis
+      port: 6379
