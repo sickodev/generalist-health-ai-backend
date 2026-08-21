@@ -1,0 +1,58 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rcm-backend-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/rcmdb
+      - SPRING_DATASOURCE_USERNAME=rcmuser
+      - SPRING_DATASOURCE_PASSWORD=rcmpass
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-demo-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - rcm-network
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rcm-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: rcmdb
+      POSTGRES_USER: rcmuser
+      POSTGRES_PASSWORD: rcmpass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rcmuser -d rcmdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rcm-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rcm-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save "" --appendonly no
+    networks:
+      - rcm-network
+
+volumes:
+  pgdata:
+
+networks:
+  rcm-network:
+    driver: bridge
