@@ -33,6 +33,7 @@ services:
       POSTGRES_PASSWORD: rcmpass
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./src/main/resources/postgres-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rcmuser -d rcmdb"]
       interval: 5s

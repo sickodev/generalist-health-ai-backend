@@ -1,0 +1,53 @@
+name: Deploy Backend to OCI Always Free
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dep1
+    paths:
+      - '**'
+
+jobs:
+  deploy:
+    name: Build & Deploy via SSH
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to OCI VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            APP_DIR="$HOME/rcm-backend"
+
+            # 1. Clone repository if first time, or pull latest changes
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "==> First time deployment: Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git "$APP_DIR"
+              cd "$APP_DIR"
+            else
+              echo "==> Updating repository..."
+              cd "$APP_DIR"
+              git fetch --all
+              git reset --hard origin/${{ github.ref_name }}
+            fi
+
+            # 2. Deploy with Docker Compose
+            echo "==> Building and starting Docker containers..."
+            docker compose down --remove-orphans || true
+            docker compose up -d --build
+
+            # 3. Prune dangling images to keep disk clean
+            docker image prune -f
+
+            echo "==> Deployment successful!"
