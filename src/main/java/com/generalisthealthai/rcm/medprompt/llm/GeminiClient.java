@@ -167,7 +167,12 @@ public class GeminiClient {
      * Domain rule-driven synthetic fallback for local testing, demo, and offline resilience.
      */
     public LlmAuditResponseDto generateSyntheticAudit(String prompt) {
-        String lower = prompt.toLowerCase();
+        String targetSection = prompt;
+        int targetIdx = prompt.indexOf("TARGET CLAIM TO AUDIT");
+        if (targetIdx != -1) {
+            targetSection = prompt.substring(targetIdx);
+        }
+        String lower = targetSection.toLowerCase();
 
         // 1. EKG (CPT 93000) for Low Back Pain (M54.5) -> Medical Necessity Denial (CO-50)
         if (lower.contains("93000") && lower.contains("m54.5")) {
